@@ -14,9 +14,10 @@ from typing import Any
 import gi
 
 gi.require_version("Gdk", "4.0")
+gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
-from gi.repository import Gdk, GLib, Gtk, Gtk4LayerShell, Pango  # noqa: E402
+from gi.repository import Gdk, GdkPixbuf, GLib, Gtk, Gtk4LayerShell, Pango  # noqa: E402
 
 
 CONFIG_DIR = pathlib.Path(__file__).resolve().parent
@@ -745,7 +746,8 @@ class MinimalBarWindow(Gtk.Window):
             self.media_cover.set_paintable(None)
             return
         try:
-            texture = Gdk.Texture.new_from_filename(path)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 82, 82, True)
+            texture = Gdk.Texture.new_for_pixbuf(pixbuf)
             self.media_cover.set_paintable(texture)
         except Exception:
             self.media_cover.set_paintable(None)
