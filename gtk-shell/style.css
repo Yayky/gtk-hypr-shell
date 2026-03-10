@@ -201,6 +201,16 @@ popover contents {
   font-size: 11px;
 }
 
+.popover-detail {
+  color: rgba(242, 228, 220, 0.86);
+  margin-bottom: 2px;
+}
+
+.stats-text {
+  color: rgba(242, 228, 220, 0.9);
+  font-size: 10px;
+}
+
 .compact-list row {
   padding: 0;
 }
@@ -251,7 +261,7 @@ popover contents {
 }
 
 .list-row + .list-row {
-  margin-top: 6px;
+  margin-top: 5px;
 }
 
 .list-row-accent {
@@ -354,6 +364,10 @@ popover contents {
   border-color: rgba(212, 129, 58, 0.3);
 }
 
+.popover-actions-row {
+  margin-top: 2px;
+}
+
 .calendar-shell calendar {
   background: transparent;
   color: #f2e4dc;
@@ -365,7 +379,7 @@ calendar {
 }
 
 .calendar-popover-card {
-  padding: 14px;
+  padding: 12px;
 }
 
 .calendar-summary {

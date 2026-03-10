@@ -14,10 +14,9 @@ from typing import Any
 import gi
 
 gi.require_version("Gdk", "4.0")
-gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
-from gi.repository import Gdk, GdkPixbuf, GLib, Gtk, Gtk4LayerShell, Pango  # noqa: E402
+from gi.repository import Gdk, GLib, Gtk, Gtk4LayerShell, Pango  # noqa: E402
 
 
 CONFIG_DIR = pathlib.Path(__file__).resolve().parent
@@ -331,6 +330,11 @@ class MinimalBarWindow(Gtk.Window):
         button.connect("clicked", callback)
         return button
 
+    def make_actions_row(self) -> Gtk.Box:
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        row.add_css_class("popover-actions-row")
+        return row
+
     def make_separator(self) -> Gtk.Separator:
         separator = Gtk.Separator.new(Gtk.Orientation.HORIZONTAL)
         separator.add_css_class("popover-separator")
@@ -475,10 +479,11 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("list-popover-card")
         shell.append(card)
         self.network_detail = self.make_popover_text()
+        self.network_detail.add_css_class("popover-detail")
         card.append(self.network_detail)
         self.network_rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.append(self.network_rows)
-        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions = self.make_actions_row()
         actions.append(self.make_popover_button("Refresh", lambda _btn: self.rescan_wifi(), accent=True))
         actions.append(self.make_popover_button("nmtui", lambda _btn: dispatch_exec("kitty -e nmtui")))
         card.append(actions)
@@ -488,10 +493,11 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("list-popover-card")
         shell.append(card)
         self.vpn_detail = self.make_popover_text()
+        self.vpn_detail.add_css_class("popover-detail")
         card.append(self.vpn_detail)
         self.vpn_profiles_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.append(self.vpn_profiles_box)
-        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions = self.make_actions_row()
         actions.append(self.make_popover_button("nmtui", lambda _btn: dispatch_exec("kitty -e nmtui")))
         self.vpn_external_button = None
         if command_exists("protonvpn-app"):
@@ -507,10 +513,11 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("list-popover-card")
         shell.append(card)
         self.bluetooth_detail = self.make_popover_text()
+        self.bluetooth_detail.add_css_class("popover-detail")
         card.append(self.bluetooth_detail)
         self.bluetooth_rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.append(self.bluetooth_rows)
-        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        actions = self.make_actions_row()
         self.bluetooth_power_button = self.make_popover_button("Toggle", lambda _btn: self.toggle_bluetooth(), accent=True)
         actions.append(self.bluetooth_power_button)
         self.bluetooth_scan_button = self.make_popover_button("Scan", lambda _btn: self.start_bluetooth_scan())
@@ -523,6 +530,8 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("stats-popover-card")
         shell.append(card)
         self.cpu_detail = self.make_popover_text()
+        self.cpu_detail.add_css_class("stats-text")
+        self.cpu_detail.set_wrap(False)
         card.append(self.cpu_detail)
 
     def build_ram_popover(self, shell: Gtk.Box) -> None:
@@ -530,6 +539,8 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("stats-popover-card")
         shell.append(card)
         self.ram_detail = self.make_popover_text()
+        self.ram_detail.add_css_class("stats-text")
+        self.ram_detail.set_wrap(False)
         card.append(self.ram_detail)
 
     def build_gpu_popover(self, shell: Gtk.Box) -> None:
@@ -537,6 +548,8 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("stats-popover-card")
         shell.append(card)
         self.gpu_detail = self.make_popover_text()
+        self.gpu_detail.add_css_class("stats-text")
+        self.gpu_detail.set_wrap(False)
         card.append(self.gpu_detail)
 
     def build_disk_popover(self, shell: Gtk.Box) -> None:
@@ -544,6 +557,8 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("stats-popover-card")
         shell.append(card)
         self.disk_detail = self.make_popover_text()
+        self.disk_detail.add_css_class("stats-text")
+        self.disk_detail.set_wrap(False)
         card.append(self.disk_detail)
 
     def build_power_popover(self, shell: Gtk.Box) -> None:
@@ -551,6 +566,7 @@ class MinimalBarWindow(Gtk.Window):
         card.add_css_class("list-popover-card")
         shell.append(card)
         self.power_detail = self.make_popover_text()
+        self.power_detail.add_css_class("popover-detail")
         card.append(self.power_detail)
         self.power_buttons_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         card.append(self.power_buttons_box)
@@ -729,8 +745,7 @@ class MinimalBarWindow(Gtk.Window):
             self.media_cover.set_paintable(None)
             return
         try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 82, 82, True)
-            texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+            texture = Gdk.Texture.new_from_filename(path)
             self.media_cover.set_paintable(texture)
         except Exception:
             self.media_cover.set_paintable(None)
