@@ -3,10 +3,12 @@
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
 import threading
+import time
 import hashlib
 import urllib.request
 from typing import Any
@@ -76,7 +78,69 @@ def truncate(text: str, length: int) -> str:
 
 
 def load_stats(kind: str) -> Any:
+    if kind == "cpu":
+        return load_cpu_rows()
     return run_json([str(POPUP_DATA_SCRIPT), kind], fallback=[] if kind in {"cpu", "disks"} else {})
+
+
+def read_proc_cpu_snapshot() -> dict[str, tuple[int, int]]:
+    snapshot: dict[str, tuple[int, int]] = {}
+    try:
+        with pathlib.Path("/proc/stat").open() as handle:
+            for line in handle:
+                if not line.startswith("cpu") or line.startswith("cpu "):
+                    continue
+                parts = line.split()
+                if len(parts) < 6:
+                    continue
+                values = [int(value) for value in parts[1:9]]
+                total = sum(values)
+                idle = values[3] + (values[4] if len(values) > 4 else 0)
+                snapshot[parts[0]] = (total, idle)
+    except Exception:
+        return {}
+    return snapshot
+
+
+def read_cpu_temps() -> dict[str, str]:
+    if not command_exists("sensors"):
+        return {}
+    temps: dict[str, str] = {}
+    output = run(["sensors"], timeout=1.0)
+    for line in output.splitlines():
+        match = re.match(r"Core\s+(\d+):\s+\+?([0-9]+(?:\.[0-9]+)?)°C", line.strip())
+        if not match:
+            continue
+        temps[f"cpu{match.group(1)}"] = str(int(float(match.group(2))))
+    return temps
+
+
+def load_cpu_rows() -> list[dict[str, Any]]:
+    first = read_proc_cpu_snapshot()
+    if not first:
+        return []
+    time.sleep(0.12)
+    second = read_proc_cpu_snapshot()
+    if not second:
+        return []
+    temps = read_cpu_temps()
+    rows: list[dict[str, Any]] = []
+    for cpu_id in sorted(second.keys(), key=lambda value: int(value.removeprefix("cpu"))):
+        first_total, first_idle = first.get(cpu_id, second[cpu_id])
+        second_total, second_idle = second[cpu_id]
+        total_diff = second_total - first_total
+        idle_diff = second_idle - first_idle
+        usage = 0
+        if total_diff > 0:
+            usage = max(0, min(100, int((100 * (total_diff - idle_diff)) / total_diff)))
+        rows.append(
+            {
+                "label": cpu_id.replace("cpu", "c"),
+                "usage": usage,
+                "temp": temps.get(cpu_id, "-"),
+            }
+        )
+    return rows
 
 
 def playerctl(args: list[str]) -> str:
@@ -236,6 +300,10 @@ class MinimalBarWindow(Gtk.Window):
         self.date_button, self.date_bubble, self.date_label, calendar_shell = self.make_menu_bubble("󰃭  -- ---")
         self.build_calendar_popover(calendar_shell)
         self.time_bubble, self.time_label = self.make_bubble_label("󰥔  --:--")
+        self.attach_stats_refresh(self.cpu_button)
+        self.attach_stats_refresh(self.ram_button)
+        self.attach_stats_refresh(self.gpu_button)
+        self.attach_stats_refresh(self.disk_button)
         for bubble in (
             self.network_button,
             self.vpn_button,
@@ -254,6 +322,16 @@ class MinimalBarWindow(Gtk.Window):
         surface.set_end_widget(self.right_cluster)
 
         self.set_child(surface)
+
+    def attach_stats_refresh(self, menu: Gtk.MenuButton) -> None:
+        popover = menu.get_popover()
+        if popover is None:
+            return
+        popover.connect("notify::visible", self.on_stats_popover_visible)
+
+    def on_stats_popover_visible(self, popover: Gtk.Popover, _pspec) -> None:
+        if popover.get_visible():
+            self.queue_slow_refresh()
 
     def make_bubble_label(self, text: str) -> tuple[Gtk.Box, Gtk.Label]:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
@@ -533,6 +611,7 @@ class MinimalBarWindow(Gtk.Window):
         self.cpu_detail = self.make_popover_text()
         self.cpu_detail.add_css_class("stats-text")
         self.cpu_detail.set_wrap(False)
+        self.cpu_detail.set_text("Loading…")
         card.append(self.cpu_detail)
 
     def build_ram_popover(self, shell: Gtk.Box) -> None:
@@ -542,6 +621,7 @@ class MinimalBarWindow(Gtk.Window):
         self.ram_detail = self.make_popover_text()
         self.ram_detail.add_css_class("stats-text")
         self.ram_detail.set_wrap(False)
+        self.ram_detail.set_text("Loading…")
         card.append(self.ram_detail)
 
     def build_gpu_popover(self, shell: Gtk.Box) -> None:
@@ -551,6 +631,7 @@ class MinimalBarWindow(Gtk.Window):
         self.gpu_detail = self.make_popover_text()
         self.gpu_detail.add_css_class("stats-text")
         self.gpu_detail.set_wrap(False)
+        self.gpu_detail.set_text("Loading…")
         card.append(self.gpu_detail)
 
     def build_disk_popover(self, shell: Gtk.Box) -> None:
@@ -560,6 +641,7 @@ class MinimalBarWindow(Gtk.Window):
         self.disk_detail = self.make_popover_text()
         self.disk_detail.add_css_class("stats-text")
         self.disk_detail.set_wrap(False)
+        self.disk_detail.set_text("Loading…")
         card.append(self.disk_detail)
 
     def build_power_popover(self, shell: Gtk.Box) -> None:
@@ -1071,39 +1153,43 @@ class MinimalBarWindow(Gtk.Window):
 
     def apply_stats_state(self, state: dict[str, Any]) -> None:
         cpu_rows = state.get("cpu_rows", []) or []
-        avg_cpu = 0
-        if cpu_rows:
-            avg_cpu = int(sum(int(row.get("usage", 0)) for row in cpu_rows) / len(cpu_rows))
         ram = state.get("ram", {}) or {}
         gpu = state.get("gpu", {}) or {}
         disks = state.get("disks", []) or []
-        self.cpu_label.set_text(f"  {avg_cpu}%")
-        self.ram_label.set_text(f"  {ram.get('pct', 0)}%")
-        self.gpu_label.set_text("󰢮" if gpu.get("available", True) else "󰢮?")
-        root_disk = next((disk for disk in disks if disk.get("label") == "/"), {})
-        self.disk_label.set_text(f"󰋊  {root_disk.get('pct', '--')}%")
-        cpu_lines = []
-        for index in range(0, min(len(cpu_rows), 12), 2):
-            left = cpu_rows[index]
-            right = cpu_rows[index + 1] if index + 1 < len(cpu_rows) else None
-            left_text = f"{left.get('label','c0'):>3} {left.get('usage', 0):>2}%  {left.get('temp', '--'):>2}C"
-            if right:
-                right_text = f"{right.get('label','c1'):>3} {right.get('usage', 0):>2}%  {right.get('temp', '--'):>2}C"
-                cpu_lines.append(f"{left_text}    {right_text}")
-            else:
-                cpu_lines.append(left_text)
-        self.cpu_detail.set_text("\n".join(cpu_lines) or "No CPU data")
-        self.ram_detail.set_text(
-            "\n".join(
-                [
-                    f"used   {ram.get('used', '--')} / {ram.get('total', '--')}  {ram.get('pct', 0)}%",
-                    f"free   {ram.get('free', '--')}",
-                    f"cache  {ram.get('cache', '--')}",
-                    f"shared {ram.get('shared', '--')}",
-                    f"swap   {ram.get('swap', '--')}",
-                ]
+
+        if cpu_rows:
+            avg_cpu = int(sum(int(row.get("usage", 0)) for row in cpu_rows) / len(cpu_rows))
+            self.cpu_label.set_text(f"  {avg_cpu}%")
+            cpu_lines = []
+            for index in range(0, min(len(cpu_rows), 12), 2):
+                left = cpu_rows[index]
+                right = cpu_rows[index + 1] if index + 1 < len(cpu_rows) else None
+                left_text = f"{left.get('label','c0'):>3} {left.get('usage', 0):>2}%  {left.get('temp', '--'):>2}C"
+                if right:
+                    right_text = f"{right.get('label','c1'):>3} {right.get('usage', 0):>2}%  {right.get('temp', '--'):>2}C"
+                    cpu_lines.append(f"{left_text}    {right_text}")
+                else:
+                    cpu_lines.append(left_text)
+            self.cpu_detail.set_text("\n".join(cpu_lines))
+        elif not self.cpu_detail.get_text():
+            self.cpu_detail.set_text("Loading…")
+
+        if ram:
+            self.ram_label.set_text(f"  {ram.get('pct', 0)}%")
+            self.ram_detail.set_text(
+                "\n".join(
+                    [
+                        f"used   {ram.get('used', '--')} / {ram.get('total', '--')}  {ram.get('pct', 0)}%",
+                        f"free   {ram.get('free', '--')}",
+                        f"cache  {ram.get('cache', '--')}",
+                        f"shared {ram.get('shared', '--')}",
+                        f"swap   {ram.get('swap', '--')}",
+                    ]
+                )
             )
-        )
+
+        if gpu:
+            self.gpu_label.set_text("󰢮" if gpu.get("available", True) else "󰢮?")
         if gpu.get("available", False):
             self.gpu_detail.set_text(
                 "\n".join(
@@ -1116,12 +1202,15 @@ class MinimalBarWindow(Gtk.Window):
                     ]
                 )
             )
-        else:
+        elif gpu and not gpu.get("available", True):
             self.gpu_detail.set_text("No NVIDIA GPU data")
-        self.disk_detail.set_text(
-            "\n".join(f"{disk.get('label','?'):6} {disk.get('pct','--'):>3}%  {disk.get('usage','--')}" for disk in disks)
-            or "No disk data"
-        )
+
+        if disks:
+            root_disk = next((disk for disk in disks if disk.get("label") == "/"), {})
+            self.disk_label.set_text(f"󰋊  {root_disk.get('pct', '--')}%")
+            self.disk_detail.set_text(
+                "\n".join(f"{disk.get('label','?'):6} {disk.get('pct','--'):>3}%  {disk.get('usage','--')}" for disk in disks)
+            )
 
     def apply_battery_state(self, state: dict[str, Any]) -> None:
         info = state.get("info", {}) or {}
