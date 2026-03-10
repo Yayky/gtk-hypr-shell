@@ -1,0 +1,431 @@
+window.shell-bar {
+  background: transparent;
+}
+
+.bar-surface {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 2px 0;
+  box-shadow: none;
+}
+
+.bubble-box {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.media-bubble {
+  min-width: 168px;
+  border-color: rgba(212, 129, 58, 0.18);
+}
+
+.compound-bubble {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  min-height: 28px;
+  padding: 0 6px 0 0;
+}
+
+.compound-bubble:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.media-cluster {
+  border-color: rgba(212, 129, 58, 0.18);
+}
+
+.compound-menu-button {
+  padding: 0;
+}
+
+.compound-menu-button > button.toggle {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-height: 28px;
+  padding: 0;
+}
+
+.compound-menu-button > button.toggle:hover {
+  background: transparent;
+}
+
+.compound-menu-button > button.toggle > box > .bubble-box {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.compound-separator {
+  background: rgba(212, 129, 58, 0.2);
+  margin: 6px 6px 6px 1px;
+  min-width: 1px;
+}
+
+.bubble-label {
+  color: #f4e8e1;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 11px;
+}
+
+button.bubble-button,
+button.workspace-button,
+menubutton.bubble-menu > button.toggle {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  color: #f4e8e1;
+  min-height: 28px;
+  padding: 0 10px;
+  box-shadow: none;
+}
+
+button.icon-button {
+  min-width: 28px;
+  padding: 0;
+}
+
+button.compound-icon-button {
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: #f4e8e1;
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0;
+  box-shadow: none;
+}
+
+button.compound-icon-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+button.compound-icon-button:disabled {
+  color: rgba(244, 232, 225, 0.35);
+}
+
+button.bubble-button:hover,
+button.workspace-button:hover,
+menubutton.bubble-menu > button.toggle:hover,
+.bubble-box:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+button.workspace-button {
+  min-width: 28px;
+  padding: 0;
+}
+
+button.workspace-active {
+  background: rgba(212, 129, 58, 0.24);
+  border-color: rgba(212, 129, 58, 0.36);
+  color: #fff6f0;
+}
+
+menubutton.bubble-menu > button.toggle {
+  padding: 0;
+}
+
+menubutton.bubble-menu > button.toggle > box > .bubble-box {
+  margin: 0;
+}
+
+.title-bubble {
+  min-width: 168px;
+}
+
+popover {
+  background: transparent;
+}
+
+popover contents {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.popover-shell {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.popover-card {
+  background: rgba(255, 255, 255, 0.065);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
+}
+
+.list-popover-card {
+  padding: 11px;
+}
+
+.stats-popover-card {
+  padding: 11px 12px;
+}
+
+.popover-title {
+  color: #dd8e45;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.popover-title-large {
+  color: #f7ece6;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.popover-subtitle {
+  color: rgba(241, 223, 216, 0.68);
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 11px;
+}
+
+.popover-text {
+  color: #f2e4dc;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 11px;
+}
+
+.compact-list row {
+  padding: 0;
+}
+
+.list-row {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.list-row-button {
+  background: rgba(212, 129, 58, 0.14);
+  border: 1px solid rgba(212, 129, 58, 0.2);
+  border-radius: 12px;
+  color: #f4e8e1;
+  min-height: 40px;
+  padding: 7px 10px;
+  box-shadow: none;
+}
+
+.list-row-button:hover {
+  background: rgba(212, 129, 58, 0.18);
+}
+
+.list-row-button-accent {
+  background: rgba(212, 129, 58, 0.22);
+  border-color: rgba(212, 129, 58, 0.28);
+}
+
+.list-row-title {
+  color: #f4e8e1;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.list-row-subtitle {
+  color: rgba(241, 223, 216, 0.62);
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 10px;
+}
+
+.list-row-suffix {
+  color: #dd8e45;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.list-row + .list-row {
+  margin-top: 6px;
+}
+
+.list-row-accent {
+  background: rgba(212, 129, 58, 0.2);
+  border: 1px solid rgba(212, 129, 58, 0.24);
+}
+
+.media-cover-slot {
+  background: rgba(212, 129, 58, 0.14);
+  border: 1px solid rgba(212, 129, 58, 0.2);
+  border-radius: 16px;
+  min-width: 82px;
+  min-height: 82px;
+  padding: 0;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.media-cover {
+  border-radius: 16px;
+  min-width: 82px;
+  min-height: 82px;
+  padding: 0;
+}
+
+.media-meta {
+  min-width: 0;
+}
+
+.media-progress trough {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  min-height: 7px;
+}
+
+.media-progress progress {
+  background: rgba(212, 129, 58, 0.88);
+  border-radius: 999px;
+  min-height: 7px;
+}
+
+.media-popover-card {
+  padding: 12px;
+}
+
+.media-status-chip {
+  background: rgba(212, 129, 58, 0.14);
+  border: 1px solid rgba(212, 129, 58, 0.22);
+  border-radius: 999px;
+  color: #f2e4dc;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+}
+
+.media-top-row {
+  margin-top: 2px;
+}
+
+.media-times-row {
+  margin-top: -2px;
+}
+
+.media-controls-row {
+  margin-top: 2px;
+}
+
+.media-control-button {
+  min-width: 40px;
+  min-height: 38px;
+  padding: 0;
+}
+
+.media-open-button {
+  margin-left: 6px;
+}
+
+.popover-separator {
+  background: rgba(212, 129, 58, 0.14);
+  min-height: 1px;
+  margin: 1px 0 0;
+}
+
+.popover-button {
+  background: rgba(212, 129, 58, 0.14);
+  border: 1px solid rgba(212, 129, 58, 0.2);
+  border-radius: 12px;
+  color: #f4e8e1;
+  min-height: 32px;
+  padding: 0 11px;
+  box-shadow: none;
+}
+
+.popover-button:hover {
+  background: rgba(212, 129, 58, 0.18);
+}
+
+.popover-button-accent {
+  background: rgba(212, 129, 58, 0.22);
+  border-color: rgba(212, 129, 58, 0.3);
+}
+
+.calendar-shell calendar {
+  background: transparent;
+  color: #f2e4dc;
+}
+
+calendar {
+  background: transparent;
+  color: #f2e4dc;
+}
+
+.calendar-popover-card {
+  padding: 14px;
+}
+
+.calendar-summary {
+  color: rgba(241, 223, 216, 0.74);
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 11px;
+}
+
+.calendar-frame {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.calendar-footer {
+  margin-top: 2px;
+}
+
+.calendar-today-button {
+  min-height: 28px;
+  padding: 0 11px;
+}
+
+calendar.view {
+  background: transparent;
+  color: #f2e4dc;
+}
+
+calendar.view header {
+  color: #dd8e45;
+}
+
+calendar.view button {
+  background: rgba(212, 129, 58, 0.14);
+  border-radius: 10px;
+  color: #f4e8e1;
+}
+
+calendar.view button:hover {
+  background: rgba(212, 129, 58, 0.18);
+}
+
+calendar.view label.day-name {
+  color: rgba(221, 142, 69, 0.9);
+  font-weight: 700;
+}
+
+calendar.view label.other-month {
+  color: rgba(241, 223, 216, 0.34);
+}
+
+calendar.view label.today {
+  background: rgba(212, 129, 58, 0.14);
+  border-radius: 999px;
+  color: #fff6f0;
+}
+
+calendar.view label:selected {
+  background: rgba(212, 129, 58, 0.22);
+  border-radius: 999px;
+  color: #fff6f0;
+}
