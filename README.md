@@ -1,4 +1,4 @@
-# gtk-hypr-shell
+# gtk-hypr-shell_top-bar
 
 A custom GTK4 top bar for Hyprland built with `gtk4-layer-shell`.
 
