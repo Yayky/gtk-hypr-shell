@@ -28,6 +28,7 @@ POPUP_DATA_SCRIPT = CONFIG_DIR / "scripts" / "popup-data.sh"
 SPOTIFY_SCRIPT = CONFIG_DIR / "scripts" / "spotify.sh"
 SPOTIFY_PLACEHOLDER = CONFIG_DIR / "assets" / "spotify.svg"
 ART_CACHE_DIR = pathlib.Path.home() / ".cache" / "gtk-shell"
+OSD_EVENT_PATH = ART_CACHE_DIR / "osd-event.json"
 
 
 def run(args: list[str], timeout: float = 4.0) -> str:
@@ -190,6 +191,14 @@ def cache_art_from_url(url: str) -> str:
     return str(target)
 
 
+def current_monitor_width_hint() -> int:
+    monitors = run_json(["hyprctl", "-j", "monitors"], fallback=[]) or []
+    if monitors:
+        width = int(monitors[0].get("width", 1920))
+        return max(width - 28, 400)
+    return 1892
+
+
 class MinimalBarWindow(Gtk.Window):
     def __init__(self, app: Gtk.Application) -> None:
         super().__init__(application=app)
@@ -237,11 +246,7 @@ class MinimalBarWindow(Gtk.Window):
         )
 
     def bar_width_hint(self) -> int:
-        monitors = run_json(["hyprctl", "-j", "monitors"], fallback=[]) or []
-        if monitors:
-            width = int(monitors[0].get("width", 1920))
-            return max(width - 28, 400)
-        return 1892
+        return current_monitor_width_hint()
 
     def build_ui(self) -> None:
         surface = Gtk.CenterBox()
@@ -1352,15 +1357,137 @@ class MinimalBarWindow(Gtk.Window):
         return False
 
 
+class OSDWindow(Gtk.Window):
+    def __init__(self, app: Gtk.Application) -> None:
+        super().__init__(application=app)
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_focusable(False)
+        self.add_css_class("shell-osd")
+
+        Gtk4LayerShell.init_for_window(self)
+        Gtk4LayerShell.set_namespace(self, "gtk-shell-osd")
+        Gtk4LayerShell.set_layer(self, Gtk4LayerShell.Layer.OVERLAY)
+        Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.TOP, True)
+        Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.LEFT, True)
+        Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.RIGHT, True)
+        Gtk4LayerShell.set_margin(self, Gtk4LayerShell.Edge.TOP, 58)
+        Gtk4LayerShell.set_keyboard_mode(self, Gtk4LayerShell.KeyboardMode.NONE)
+        self.set_default_size(current_monitor_width_hint(), 56)
+
+        shell = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        shell.add_css_class("osd-shell")
+        shell.set_halign(Gtk.Align.FILL)
+        shell.set_valign(Gtk.Align.START)
+
+        align = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        align.add_css_class("osd-align")
+        align.set_halign(Gtk.Align.CENTER)
+        align.set_valign(Gtk.Align.START)
+
+        card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        card.add_css_class("osd-card")
+        card.set_halign(Gtk.Align.CENTER)
+        card.set_valign(Gtk.Align.START)
+
+        self.osd_icon = Gtk.Label(label="󰕾")
+        self.osd_icon.add_css_class("osd-icon")
+        self.osd_icon.set_valign(Gtk.Align.CENTER)
+        card.append(self.osd_icon)
+
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        content.add_css_class("osd-content")
+        self.osd_progress = Gtk.ProgressBar()
+        self.osd_progress.add_css_class("osd-progress")
+        self.osd_progress.set_fraction(0.0)
+        self.osd_progress.set_hexpand(True)
+        content.append(self.osd_progress)
+
+        card.append(content)
+        align.append(card)
+        shell.append(align)
+        self.set_child(shell)
+
+        self._hide_source_id = 0
+        self.set_visible(False)
+
+    def show_event(self, event: dict[str, Any]) -> None:
+        kind = str(event.get("kind", "volume"))
+        try:
+            value = int(event.get("value", 0))
+        except Exception:
+            value = 0
+        value = max(0, min(value, 100))
+        muted = bool(event.get("muted", False))
+
+        if kind == "brightness":
+            icon = "󰃠"
+            fraction = value / 100.0
+        else:
+            if muted or value == 0:
+                icon = "󰝟"
+                fraction = 0.0
+            elif value < 35:
+                icon = "󰕿"
+                fraction = value / 100.0
+            elif value < 70:
+                icon = "󰖀"
+                fraction = value / 100.0
+            else:
+                icon = "󰕾"
+                fraction = value / 100.0
+
+        self.osd_icon.set_text(icon)
+        self.osd_progress.set_fraction(max(0.0, min(fraction, 1.0)))
+        self.present()
+        self.set_visible(True)
+
+        if self._hide_source_id:
+            GLib.source_remove(self._hide_source_id)
+        self._hide_source_id = GLib.timeout_add(1000, self.hide_after_timeout)
+
+    def hide_after_timeout(self) -> bool:
+        self.set_visible(False)
+        self._hide_source_id = 0
+        return False
+
+
 class MinimalBarApp(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id="local.yayky.MinimalGtkBar")
         self.window: MinimalBarWindow | None = None
+        self.osd_window: OSDWindow | None = None
+        self._osd_seen_mtime_ns = OSD_EVENT_PATH.stat().st_mtime_ns if OSD_EVENT_PATH.exists() else 0
+        self._osd_poll_started = False
 
     def do_activate(self) -> None:
         if self.window is None:
             self.window = MinimalBarWindow(self)
+        if self.osd_window is None:
+            self.osd_window = OSDWindow(self)
+        if not self._osd_poll_started:
+            GLib.timeout_add(90, self.poll_osd_event)
+            self._osd_poll_started = True
         self.window.present()
+
+    def poll_osd_event(self) -> bool:
+        if self.osd_window is None:
+            return True
+        try:
+            stat = OSD_EVENT_PATH.stat()
+        except FileNotFoundError:
+            return True
+        except Exception:
+            return True
+        if stat.st_mtime_ns <= self._osd_seen_mtime_ns:
+            return True
+        self._osd_seen_mtime_ns = stat.st_mtime_ns
+        try:
+            payload = json.loads(OSD_EVENT_PATH.read_text())
+        except Exception:
+            return True
+        self.osd_window.show_event(payload)
+        return True
 
 
 def main() -> int:

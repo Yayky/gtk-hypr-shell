@@ -443,3 +443,50 @@ calendar.view label:selected {
   border-radius: 999px;
   color: #fff6f0;
 }
+
+window.shell-osd {
+  background: transparent;
+}
+
+.osd-shell {
+  background: transparent;
+  padding: 0;
+}
+
+.osd-align {
+  background: transparent;
+  padding: 0;
+}
+
+.osd-card {
+  background: rgba(255, 255, 255, 0.065);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 16px;
+  min-width: 208px;
+  padding: 8px 11px;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
+}
+
+.osd-icon {
+  color: #dd8e45;
+  font-family: "JetBrains Mono NL", "Symbols Nerd Font";
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 14px;
+}
+
+.osd-content {
+  min-width: 162px;
+}
+
+.osd-progress trough {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  min-height: 6px;
+}
+
+.osd-progress progress {
+  background: rgba(212, 129, 58, 0.78);
+  border-radius: 999px;
+  min-height: 6px;
+}
