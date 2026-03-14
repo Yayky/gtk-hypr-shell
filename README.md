@@ -22,10 +22,6 @@ This is first and foremost my personal setup. It is published because it works w
 
 ![Demo](docs/videos/demo.gif)
 
-If you want the full version instead of the GIF preview, use:
-
-- [demo.mp4](docs/videos/demo.mp4)
-
 ## Why This Exists
 
 Waybar is great, but once you want popovers to feel truly attached to the widgets above them, it starts getting awkward. This bar was rebuilt in GTK4 so the bar and its UI all belong to the same toolkit and the same process.
