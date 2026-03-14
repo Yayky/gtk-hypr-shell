@@ -6,3 +6,5 @@ __pycache__/
 *.swo
 .DS_Store
 docs/screenshots/raw/
+*.mp4
+!docs/videos/demo.mp4

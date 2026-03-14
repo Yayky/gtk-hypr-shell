@@ -18,12 +18,13 @@ This is first and foremost my personal setup. It is published because it works w
 - compact keyboard OSD for volume and brightness
 - helper scripts for media, stats, and OSD updates
 
-## Screenshots
+## Preview
 
-![Bar](docs/screenshots/bar-clean.png)
-![Media](docs/screenshots/media-popover.png)
-![Network](docs/screenshots/network-popover.png)
-![Calendar](docs/screenshots/calendar-popover.png)
+![Demo](docs/videos/demo.gif)
+
+If you want the full version instead of the GIF preview, use:
+
+- [demo.mp4](docs/videos/demo.mp4)
 
 ## Why This Exists
 
